@@ -1,21 +1,44 @@
 require('dotenv').config();
-
+const request = require('request');
 const TelegramBot = require('node-telegram-bot-api');
 const TOKEN = process.env.TOKEN || "telegram token";
 const bot = new TelegramBot(TOKEN, {polling: true});
 
-// Matches "/echo [whatever]"
-bot.onText(/\/echo (.+)/, (msg, match) => {
+
+bot.onText(/\/start/, (msg) => {
+  const chatId = msg.chat.id;
+  const message1 = "Hi! I'm a Shitcoin bot, and I exist to provide you information on certain shitcoins/cryptocurrencies";
+  const message2 = "Enter /price followed by a shitcoin name and I will post the current USD value listed on Coinmarketcap";
+
+  bot.sendMessage(chatId, message2);
+  bot.sendMessage(chatId, message1);
+})
+
+
+bot.onText(/\/price (.+)/, (msg, match) => {
 
   const chatId = msg.chat.id;
-  const resp = match[1]; // the captured "whatever"
+  const name = match[1];
+  const url = "https://api.coinmarketcap.com/v1/ticker/" + name.toLowerCase();
+  let data;
+  let message;
 
-  // send back the matched "whatever" to the chat
-  bot.sendMessage(chatId, resp);
-});
+  request(url, function(error, response, body) {
+    if (!error) {
+      data = JSON.parse(body)[0].price_usd;
+      message = `The current price of ${name} is: $${data}`;
+      bot.sendMessage(chatId, message).catch((error) => {
+        console.log(error.code);
+        console.log(error.response.body);
+      });;
+    }
+  })
+
+})
+
 
 // Listen for any kind of message. There are different kinds of
-// messages.
+// messages. Test to ensure bot is receiving messages
 bot.on('message', (msg) => {
   const chatId = msg.chat.id;
 
